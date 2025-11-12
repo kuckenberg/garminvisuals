@@ -1,14 +1,15 @@
-# Use a lightweight Python image
 FROM python:3.12-slim
 
-# Set a working directory inside the container
 WORKDIR /app
 
-# Copy your code into the container
-COPY . .
+COPY . /app
+COPY crontab.txt /etc/cron.d/garmin-cron
 
-# Install dependencies (if requirements.txt exists)
-RUN pip install --no-cache-dir -r requirements.txt || true
+RUN pip install --no-cache-dir -r requirements.txt \
+    && apt-get update && apt-get install -y cron \
+    && rm -rf /var/lib/apt/lists/*
+RUN chmod 0644 /etc/cron.d/garmin-cron
 
-# Command to run your script
-CMD ["bash", "-c", "while true; do python3 main.py; sleep 21600; done"]
+RUN crontab /etc/cron.d/garmin-cron
+
+CMD ["cron", "-f"]
